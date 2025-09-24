@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RAG PDF QA</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    /* Make answer box bigger and scrollable */
+    #answerBox {
+      width: 80%;
+      min-height: 100px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 16px;
+      white-space: pre-wrap;  /* Preserve line breaks */
+      overflow-y: auto;
+      background-color: #f9f9f9;
+    }
+
+    /* Simple spinner */
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h2>Upload a PDF</h2>
+  <input type="file" id="pdfInput" />
+  <button onclick="uploadPDF()">Upload</button>
+
+  <h2>Ask a Question</h2>
+  <input type="text" id="questionInput" placeholder="Type your question here..." />
+  <button onclick="askQuestion()">Ask</button>
+  <span id="loadingSpinner"></span>
+
+  <h2>Answer:</h2>
+  <div id="answerBox"></div>
+
+  <script>
+    let uploadedPDFPath = "";
+
+    async function uploadPDF() {
+      const input = document.getElementById("pdfInput");
+      const formData = new FormData();
+      formData.append("pdf", input.files[0]);
+
+      const response = await fetch("/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      uploadedPDFPath = data.pdf_path;
+      alert("✅ PDF uploaded successfully!");
+    }
+
+    async function askQuestion() {
+      const question = document.getElementById("questionInput").value;
+      const answerBox = document.getElementById("answerBox");
+      const spinner = document.getElementById("loadingSpinner");
+
+      // Show loading
+      answerBox.innerText = "";
+      spinner.innerHTML = '<div class="loader"></div>';
+
+      try {
+        const response = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pdf_path: uploadedPDFPath,
+            question: question
+          })
+        });
+
+        const data = await response.json();
+        answerBox.innerText = data.answer || data.error;
+      } catch (err) {
+        answerBox.innerText = "❌ Error fetching answer!";
+      } finally {
+        // Hide spinner
+        spinner.innerHTML = "";
+      }
+    }
+  </script>
+</body>
+</html>
