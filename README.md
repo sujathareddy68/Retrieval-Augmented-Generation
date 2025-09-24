@@ -17,12 +17,15 @@ It combines document retrieval with a language model for more reliable responses
 1. Clone the repository:
 
 git clone https://github.com/your-username/your-repo-name.git
+
 cd your-repo-name
 
 2. Create a virtual environment:
 
 python -m venv venv
+
 source venv/bin/activate   # Linux/Mac
+
 venv\Scripts\activate      # Windows
 
 3. Install dependencies:
@@ -36,6 +39,7 @@ python app.py
 **Using Ollama + Mistral (Local LLM)**
 
 1. Install Ollama
+
 https://ollama.com/download/windows
 
 2. Pull the Mistral model:
