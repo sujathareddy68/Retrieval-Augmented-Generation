@@ -5,7 +5,7 @@ import os
 from rag_chain import answer_question_from_pdf, check_ollama_connection
 
 app = Flask(__name__)
-CORS(app)  # Allow frontend to call APIs
+CORS(app)
 from flask import render_template
 
 @app.route('/')
@@ -42,7 +42,6 @@ def ask_question():
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Simple health endpoint to check Ollama connectivity."""
     ok = check_ollama_connection()
     if ok:
         return jsonify({'status': 'ok', 'ollama': 'reachable'})
@@ -55,3 +54,4 @@ if __name__ == '__main__':
 #curl -X POST http://localhost:5000/ask \
 #-H "Content-Type: application/json" \
 #-d '{"pdf_path": "uploads/sample.pdf", "question": "What is the summary?"}'
+
