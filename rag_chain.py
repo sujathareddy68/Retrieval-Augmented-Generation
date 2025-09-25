@@ -1,11 +1,8 @@
-# rag_chain.py
-
 import os
 import socket
 from typing import Tuple
 
 def load_and_split_pdf(pdf_path):
-    # Import locally to avoid heavy imports at module import time
     from langchain_community.document_loaders import PyPDFLoader
     from langchain.text_splitter import CharacterTextSplitter
 
@@ -33,16 +30,13 @@ def create_faiss_vectorstore(chunks):
 
 def build_rag_chain(vectorstore):
     from langchain.chains import RetrievalQA
-    #from langchain_community.llms import Ollama
     from langchain_ollama import OllamaLLM
 
     retriever = vectorstore.as_retriever()
     ollama_model = os.environ.get("OLLAMA_MODEL", "mistral")
 
-    #llm = Ollama(model=ollama_model)
     llm = OllamaLLM(model=ollama_model)
 
-    # ✅ force context injection
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         retriever=retriever,
@@ -52,10 +46,6 @@ def build_rag_chain(vectorstore):
     return qa_chain
 
 def check_ollama_connection(host: str = None, port: int = None, timeout: float = 2.0) -> bool:
-    """Return True if a TCP connection to the Ollama host:port succeeds.
-
-    Defaults to reading OLLAMA_HOST/OLLAMA_PORT if host/port are not provided.
-    """
     host = host or os.environ.get("OLLAMA_HOST", "localhost")
     port = int(port or os.environ.get("OLLAMA_PORT", "11434"))
     try:
@@ -68,24 +58,20 @@ def answer_question_from_pdf(pdf_path, user_query):
     chunks = load_and_split_pdf(pdf_path)
     vectorstore = create_faiss_vectorstore(chunks)
 
-    # ✅ Retrieve top matches
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     retrieved_docs = retriever.get_relevant_documents(user_query)
 
-    # If nothing retrieved, no answer
     if not retrieved_docs:
         return {"answer": "Answer is not present/available in uploaded pdf", "sources": []}
 
-    # ✅ Optional: check similarity score
-    # If best match is very weak (>0.8 distance), consider "not present"
     scored_docs = vectorstore.similarity_search_with_score(user_query, k=1)
     if scored_docs and scored_docs[0][1] > 0.8:
         return {"answer": "Answer is not present/available in uploaded pdf", "sources": []}
 
-    # ✅ If relevant docs exist → run LLM
     rag_chain = build_rag_chain(vectorstore)
     result = rag_chain.invoke(user_query)
     answer = result["result"]
     sources = [doc.page_content for doc in result["source_documents"]]
 
     return {"answer": answer, "sources": sources}
+
